@@ -2,8 +2,45 @@ from flask import Flask, render_template
 from flask import request, jsonify, abort
 
 from langchain.llms import Cohere
+from langchain import PromptTemplate, LLMChain
+from langchain.memory import ConversationBufferMemory
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+)
+
+import os
+from dotenv import load_dotenv
+load_dotenv('./.env')
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+
+def createChatbot():
+    template = """You are a helpful assistant. Answer all questions to the best of your ability.
+        If you do not know the answer to a question, say so.
+
+        {chat_history}
+        Human: {human_input}
+        Chatbot:
+    """
+
+    prompt = PromptTemplate(
+        input_variables=["chat_history", "human_input"], template=template
+    )
+
+    llm = Cohere(cohere_api_key=os.environ.get("COHERE_API_KEY"))
+    memory = ConversationBufferMemory(memory_key="chat_history")
+    chatbot = LLMChain(
+        llm=llm,
+        prompt=prompt,
+        verbose=True,
+        memory=memory
+    )
+
+    return chatbot
 
 def answer_from_knowledgebase(message):
     # TODO: Write your code here
@@ -15,8 +52,11 @@ def search_knowledgebase(message):
     return sources
 
 def answer_as_chatbot(message):
-    # TODO: Write your code here
-    return ""
+    res = chatbot.run(message)
+    return res
+
+
+chatbot = createChatbot()
 
 @app.route('/kbanswer', methods=['POST'])
 def kbanswer():

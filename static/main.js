@@ -1,4 +1,5 @@
 function sendMessage() {
+    let sendButton = document.getElementById('send-btn');
     let messageInput = document.getElementById('message-input');
     let message = messageInput.value;
     displayMessage('user', message)
@@ -27,8 +28,21 @@ function sendMessage() {
     
     xhr.open('POST', url);
     xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.addEventListener('loadstart', function() {
+        sendButton.setAttribute('disabled', true);
+        let spinner = document.createElement('i');
+        spinner.classList.add('fa-xl', 'fa-solid', 'fa-spinner', 'fa-spin-pulse');
+        spinner.id = 'loading-spinner';
+        document.getElementById('chat-container').appendChild(spinner);
+    });
+    xhr.addEventListener('loadend', function() {
+        sendButton.removeAttribute('disabled');
+        let spinner = document.getElementById('loading-spinner');
+        spinner.parentElement.removeChild(spinner);
+    });
     xhr.onload = function() {
         if (xhr.status === 200) {
+            document.getElementById('send-btn').removeAttribute('disabled');
             let response = JSON.parse(xhr.responseText);
             displayMessage('assistant', response.message);
         }
@@ -80,3 +94,11 @@ function displayMessage(sender, message) {
 // Handle button click event
 let sendButton = document.getElementById('send-btn');
 sendButton.addEventListener('click', sendMessage);
+
+let input = document.getElementById("message-input");
+input.addEventListener("keypress", function(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    sendButton.click();
+  }
+});
