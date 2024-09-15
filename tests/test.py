@@ -9,19 +9,19 @@ def client():
     return app.test_client()
 
 def test_kbanswer(client):
-    response = client.post('/kbanswer', json={'message': 'What is Python?'})
+    response = client.post('/kbanswer', json={'message': 'How is pottery made?'})
     data = json.loads(response.data)
     assert response.status_code == 200
     assert 'message' in data
 
 def test_search(client):
-    response = client.post('/search', json={'message': 'Python tutorials'})
+    response = client.post('/search', json={'message': 'pottery materials and subjects'})
     data = json.loads(response.data)
     assert response.status_code == 200
     assert 'message' in data
 
 def test_answer(client):
-    response = client.post('/answer', json={'message': 'What is lambda function in Python?'})
+    response = client.post('/answer', json={'message': 'What is a chatbot?'})
     data = json.loads(response.data)
     assert response.status_code == 200
     assert 'message' in data
