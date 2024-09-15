@@ -6,7 +6,7 @@ function sendMessage() {
     let message = messageInput.value;
 
     if (message === "") {
-        displayError('Please type a message!');
+        displayError('Please type a message so I can assist you!');
         return;
     }
 
