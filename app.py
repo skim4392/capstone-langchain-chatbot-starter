@@ -1,60 +1,51 @@
-import os
 from flask import Flask, render_template
 from flask import request, jsonify, abort
 
-from langchain import LLMChain, PromptTemplate
 from langchain.llms import Cohere
+from langchain import PromptTemplate, LLMChain
 from langchain.memory import ConversationBufferMemory
+
 from langchain.chains import RetrievalQA
 from langchain.embeddings import CohereEmbeddings
 from langchain.vectorstores import Chroma
-from langchain.schema import HumanMessage, AIMessage
+
+import os
+from dotenv import load_dotenv
+load_dotenv('./.env')
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 
-def answer_from_knowledgebase(message):
-    res = qa({"query": message})
-    return res['result']
-
-def search_knowledgebase(message):
-    res = qa({"query": message})
-    sources = ""
-    for count, source in enumerate(res['source_documents'],1):
-       sources += "Source " + str(count) + "\n"
-       sources += source.page_content + "\n"
-
-def answer_as_chatbot(message):
-    memory = ConversationBufferMemory()
-
-    # Create the prompt template
-    template = """You are an expert Python developer.
-    Answer the following question in a clear and informative manner:
-    Question: {question}
-    Answer:"""
-    prompt = PromptTemplate(template=template, input_variables=["question"])
-
-   # Add user message to memory
-    memory.chat_memory.add_message(HumanMessage(content=message))
-
-   # Initialize LLM and Chain
-    llm = Cohere(cohere_api_key=os.environ["COHERE_API_KEY"])
-    llm_chain = LLMChain(prompt=prompt, llm=llm)
-
-   # Get the response from the LLM
+def load_chatbot():
     try:
-        res = llm_chain.run(message)
-        print(f"Generated response: {res}")  # Debugging output
-    except Exception as e:
-        print(f"Error generating response: {e}")
-        return "Error generating response"
+        template = """You are a helpful assistant. Answer all questions to the best of your ability.
+            If you do not know the answer to a question, say so.
 
-    # Add AI message to memory
-    memory.chat_memory.add_message(AIMessage(content=res))
-    return res
+            {chat_history}
+            Human: {human_input}
+            Chatbot:
+        """
+
+        prompt = PromptTemplate(
+            input_variables=["chat_history", "human_input"], template=template
+        )
+
+        llm = Cohere(cohere_api_key=os.environ.get("COHERE_API_KEY"))
+        memory = ConversationBufferMemory(memory_key="chat_history")
+        chatbot = LLMChain(
+            llm=llm,
+            prompt=prompt,
+            verbose=True,
+            memory=memory
+        )
+
+        return chatbot
+    except Exception as e:
+        print("Error loading chatbot:", e)
 
 def load_db():
     try:
-        embeddings = CohereEmbeddings(cohere_api_key=os.environ["COHERE_API_KEY"])
+        embeddings = CohereEmbeddings(cohere_api_key=os.environ.get("COHERE_API_KEY"))
         vectordb = Chroma(persist_directory='db', embedding_function=embeddings)
         qa = RetrievalQA.from_chain_type(
             llm=Cohere(),
@@ -64,33 +55,50 @@ def load_db():
         )
         return qa
     except Exception as e:
-        print("Error:", e)
+        print("Error loading vector db:", e)
 
-qa = load_db() 
+chatbot = load_chatbot()
+qa = load_db()
+
+def answer_from_knowledgebase(message):
+    res = qa({"query": message})
+    return res['result']
+
+def search_knowledgebase(message):
+    res = qa({"query": message})
+    sources = ""
+    for count, source in enumerate(res['source_documents'],1):
+        sources += "<p><em><u>Source " + str(count) + "</u></em>\n"
+        sources += source.page_content + "</p>"
+    return sources
+
+def answer_as_chatbot(message):
+    res = chatbot.run(message)
+    return res
 
 @app.route('/kbanswer', methods=['POST'])
 def kbanswer():
-    message = request.json['message']
-    
-    response_message = answer_from_knowledgebase(message)
-    
-    return jsonify({'message': response_message}), 200
+    return handle_request(request, answer_from_knowledgebase)
 
 @app.route('/search', methods=['POST'])
-def search():
-    message = request.json['message']
-    response_message = search_knowledgebase(message)
-    return jsonify({'message': response_message}), 200
+def search():    
+    return handle_request(request, search_knowledgebase)
 
 @app.route('/answer', methods=['POST'])
 def answer():
+    return handle_request(request, answer_as_chatbot)
+
+def handle_request(request, cb):
     message = request.json['message']
-    
-    # Generate a response
-    response_message = answer_as_chatbot(message)
-    
-    # Return the response as JSON
-    return jsonify({'message': response_message}), 200
+    if message == "":
+        return jsonify({'error': 'We were unable to process your request. Please check the format of your query and try again.'}), 400
+
+    try:
+        response_message = cb(message)
+        return jsonify({'message': response_message}), 200
+    except Exception as e:
+        print("Error:", e)
+        return jsonify({'error': 'We are currently experiencing an issue with our system. We apologize for the inconvenience; please try again later.'}), 500
 
 @app.route("/")
 def index():
