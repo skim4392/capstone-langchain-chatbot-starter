@@ -1,49 +1,60 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Indianapolis Jones | An Ancient Art Assistant by Thinkbot</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NutriBot</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="static/style.css">
+    <style>
+        .loading-spinner {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 1000;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+    </style>
 </head>
 <body>
-    <div class="container-fluid px-10 mt-5">
-        <div class="row align-items-end">
-            <div class="col-md-9 px-2 pb-2 pb-md-0">
-                <div class="chat-wrapper">
-                    <div id="chat-container" class="chat-container"></div>
+    <div class="container mt-5">
+        <div id="chat-container" class="chat-container"></div>
+        <div class="row">
+            <div class="col-3">
+                <div>
+                    <select class="form-control" id="function-select">
+                        <option value="answer">Answer as Chatbot</option>
+                        <option value="kbanswer">Answer Question from Nutrition Knowledge Base</option>
+                        <option value="search">Search Nutrition Knowledge Base</option>
+                    </select>
                 </div>
             </div>
-            <div class="col-md-3 px-2">
-                <div class="pb-2">
-                    <h2>Hi, I'm Indianapolis Jones!</h2>
-                    <subtitle>A chatbot well-versed on the subject of Ancient Art, brought to you by Thinkbot. Please ask me about Greek architecture, Roman paintings, Etruscan sculptures, and more!</subtitle>
+            <div class="col-7">
+                <div class="input-group-append">
+                    <input type="text" id="message-input" placeholder="Type your message here..." class ="text-input">
+                    <!-- <button id="send-btn" class="btn btn-primary">Send</button> -->
+                    <button id="send-btn" class="send-button">Send</button>
                 </div>
-                <div class="user-controls">
-                    <div class="px-2">
-                        <select class="form-control" id="function-select">
-                            <option value="answer">Answer as Chatbot</option>
-                            <option value="kbanswer">Answer Question from Knowledge Base</option>
-                            <option value="search">Search Knowledge Base</option>
-                        </select>
-                    </div>
-                    <div class="px-2">
-                        <div class="input-group-append">
-                            <input type="text" id="message-input" class="form-control" placeholder="Type your message here..." required />
-                        </div>
-                        <div id="error-msg"></div>
-                    </div>
-                    <div class="px-2">
-                        <button id="send-btn" class="btn btn-primary">Send</button>
-                        <button id="clear-btn" class="btn btn-danger">Clear Chat</button>
-                    </div>
+            </div>
+            <div class="col-1">
+                <button id="clear-btn" class="btn btn-danger">Clear</button>
+            </div>
+            <div id="loading-spinner" class="loading-spinner">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
                 </div>
             </div>
         </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
-    <script src="https://kit.fontawesome.com/8303fe9b1d.js" crossorigin="anonymous"></script>
     <script src="static/main.js"></script>
 </body>
 </html>
